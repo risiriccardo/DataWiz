@@ -10,8 +10,6 @@ This project is designed to run with Python 3.11 and uses Streamlit for the fron
 
 Follow these steps to create a Conda environment, install the necessary dependencies, and run the Streamlit application.
 
-### Step 1: Clone the Repository
-
 Clone this repository to your local machine:
 
 ```bash
