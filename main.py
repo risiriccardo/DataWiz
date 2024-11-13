@@ -31,7 +31,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # Your OMDb API key
-AK = "86760ae5"
+AK = st.secrets["omdb_api"]["api_key"]
 
 # Load your dataframe
 df = pd.read_csv('merged_df.zip', compression = "zip")
