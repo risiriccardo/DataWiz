@@ -10,21 +10,21 @@ This project is designed to run with Python 3.11 and uses Streamlit for the fron
 
 Follow these steps to create a Conda environment, install the necessary dependencies, and run the Streamlit application.
 
-Clone this repository to your local machine:
+1. Clone this repository to your local machine:
 
 ```bash
 git clone https://github.com/risiriccardo/DataWiz.git
 cd DataWiz
 ```
 
-Create an environment and install the dependencies:
+2. Create an environment and install the dependencies:
 ```bash
 conda create -n DataWiz python=3.11
 conda activate DataWiz
 pip install -r requirements.txt
 ```
 
-Run the app:
+3. Run the app:
 ```bash
 streamlit run main.py
 ```
