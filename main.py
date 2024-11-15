@@ -6,15 +6,45 @@ from PIL import Image
 from io import BytesIO
 from streamlit_autorefresh import st_autorefresh
 
-# Place CSS to center the 'Proceed to Recommendations' button and add spacing below it
-st.markdown("""
+# Define the desired red color
+red_color = "#e50914"  # Netflix red color for consistency
+
+# Inject CSS to style the app components
+st.markdown(f"""
     <style>
-    div.stButton > button {
+    /* Set the primary color for the app */
+    :root {{
+        --primary-color: {red_color};
+        --primary-color-dark: {red_color};
+        --primary-color-light: {red_color};
+    }}
+    /* Center and style all buttons */
+    div.stButton > button {{
         display: block;
         margin-left: auto;
         margin-right: auto;
-        margin-bottom: 20px; /* Add space below the button */
-    }
+        margin-top: 20px;
+        margin-bottom: 40px;
+        background-color: {red_color};
+        color: white;
+        border: none;
+        border-radius: 5px;
+        padding: 0.5em 1em;
+    }}
+    /* Style button hover effect */
+    div.stButton > button:hover {{
+        background-color: #bf0610;
+    }}
+    /* Add shadow to the movie card */
+    .movie-card {{
+        box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+    }}
+    /* Style 'Recommended Movie' text */
+    .recommended-movie {{
+        font-weight: bold;
+        font-size: 1.5rem;
+        margin-bottom: 20px;
+    }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -35,8 +65,8 @@ def fetch_trending_movies(api_key):
                 "title": movie["title"],
                 "poster_path": f"https://image.tmdb.org/t/p/w500{movie['poster_path']}",
                 "overview": movie["overview"],
-                "rating": round(movie["vote_average"], 1),  # Round to 1 decimal place
-                "release_date": movie.get("release_date", "N/A")[:4]  # Get year only
+                "rating": round(movie["vote_average"], 1),
+                "release_date": movie.get("release_date", "N/A")[:4]
             })
     return trending_movies
 
@@ -52,8 +82,8 @@ if "show_recommendations" not in st.session_state:
 
 # Show trending movies if recommendations are not yet selected
 if not st.session_state.show_recommendations:
-    st.markdown("""
-        <div style="text-align: center; color: red; font-size: 3rem; font-weight: bold;">
+    st.markdown(f"""
+        <div style="text-align: center; color: {red_color}; font-size: 3rem; font-weight: bold;">
             Welcome to Movie Matchmaker!
         </div>
         <p style="text-align: center; font-size: 1.2rem; color: #f5f5f5; margin-top: 10px;">
@@ -64,17 +94,17 @@ if not st.session_state.show_recommendations:
     """, unsafe_allow_html=True)
 
     if trending_movies:
-        # Use st_autorefresh to automatically refresh the page every 5 seconds (5000 ms)
+        # Use st_autorefresh to automatically refresh the page every 5 seconds
         count = st_autorefresh(interval=5000, limit=None, key="carousel_counter")
 
-        # Update the carousel index based on the autorefresh count
+        # Update the carousel index
         st.session_state.carousel_index = count % len(trending_movies)
         current_movie = trending_movies[st.session_state.carousel_index]
 
-        # Display Movie Card
+        # Display Movie Card with shadow
         st.markdown(f"""
             <div style="display: flex; justify-content: center; align-items: center;">
-                <div style="background: #1C1C1C; color: white; padding: 20px; border-radius: 15px; width: 300px; text-align: center;">
+                <div class="movie-card" style="background: #1C1C1C; color: white; padding: 20px; border-radius: 15px; width: 300px; text-align: center;">
                     <img src="{current_movie['poster_path']}" alt="{current_movie['title']}" style="width: 100%; border-radius: 10px; margin-bottom: 15px;">
                     <div style="font-size: 1.2rem; font-weight: bold; margin-bottom: 10px;">
                         {current_movie['title']} ({current_movie['release_date']})
@@ -92,7 +122,6 @@ if not st.session_state.show_recommendations:
         # Proceed to Recommendations button underneath the movie card
         if st.button("Proceed to Recommendations", key='proceed_button'):
             st.session_state.show_recommendations = True
-
     else:
         st.write("No trending movies available at the moment.")
 
@@ -140,6 +169,10 @@ else:
     max_year = int(df['startYear'].max())
     selected_year_range = st.sidebar.slider('Release Year Range:', min_year, max_year, (min_year, max_year))
 
+    min_rating = float(df['weighted_rating'].min())
+    max_rating = float(df['weighted_rating'].max())
+    selected_rating_range = st.sidebar.slider('Rating:', min_rating, max_rating, (min_rating, max_rating))
+
     available_genres = sorted(df['genres'].explode().unique().tolist())
     selected_genres = st.sidebar.multiselect('Genres:', available_genres)
 
@@ -159,6 +192,7 @@ else:
         filtered_df = filtered_df[filtered_df['isAdult'] == 0]
     filtered_df = filtered_df[(filtered_df['startYear'] >= selected_year_range[0]) & (filtered_df['startYear'] <= selected_year_range[1])]
     filtered_df = filtered_df[(filtered_df['runtimeMinutes'] >= selected_runtime_range[0]) & (filtered_df['runtimeMinutes'] <= selected_runtime_range[1])]
+    filtered_df = filtered_df[(filtered_df['weighted_rating'] >= selected_rating_range[0]) & (filtered_df['weighted_rating'] <= selected_rating_range[1])]
     if selected_genres:
         filtered_df = filtered_df[filtered_df['genres'].apply(lambda x: all(genre in x for genre in selected_genres))]
     if selected_cast:
@@ -177,20 +211,30 @@ else:
         current_index = st.session_state.recommendation_index
         if current_index < len(filtered_df):
             movie = filtered_df.iloc[current_index]
-            st.write('**Recommended Movie:**')
+            # Style 'Recommended Movie' text
+            st.markdown("<div class='recommended-movie'>Recommended Movie:</div>", unsafe_allow_html=True)
+
             imdb_id = movie['tconst']
             poster = get_movie_poster(imdb_id, OMDB_API_KEY)
 
-            # Adjust columns to [1, 2] for a 1:2 ratio (left column is 1/3 of the right one)
+            # Adjust columns to [1, 2] for a 1:2 ratio
             col1, col2 = st.columns([1, 2])
 
             with col1:
                 if poster:
-                    st.image(poster, use_container_width=True)  
+                    st.image(poster, use_container_width=True)
                 else:
                     st.write("No poster available.")
 
+                # Add spacing before the 'Next' button
+                st.markdown("<br>", unsafe_allow_html=True)
+
+                # 'Next' button underneath the poster
+                if st.button('Next', key='next_button'):
+                    st.session_state.recommendation_index += 1
+
             with col2:
+                # Display movie details as per your request
                 st.write(f"**Title:** {movie['title']}")
                 st.write(f"**Rating:** {round(movie['weighted_rating'], 1)}")
                 st.write(f"**Year:** {movie['startYear']}")
@@ -200,13 +244,8 @@ else:
                 st.write(f"**Directors:** {', '.join(sorted(movie['directors']))}")
                 st.write(f"**Languages:** {', '.join(sorted(movie['available_languages']))}")
                 st.write(f"**Adult Content:** {'Yes' if movie['isAdult'] == 1 else 'No'}")
-                # Add some spacing before the 'Next' button
-                st.markdown("<br>", unsafe_allow_html=True)
 
-                if st.button('Next', key='next_button'):
-                    st.session_state.recommendation_index += 1
         else:
             st.write('No more recommendations.')
-            # Optionally, you can reset the index or provide an option to restart
             if st.button('Restart Recommendations', key='restart_button'):
                 st.session_state.recommendation_index = 0
