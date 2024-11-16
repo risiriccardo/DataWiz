@@ -1,9 +1,9 @@
 # DataWiz
-This project is designed to run with Python 3.11 and uses Streamlit for the front end.
+This project is designed to run with Python 3.11 and uses Streamlit for the front end
 
 ## Prerequisites
 
-- [Conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html): Make sure you have Conda installed.
+- [Conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html): Make sure you have Conda installed!
 - Python 3.11: Ensure you have Python 3.11 compatible with Conda.
 
 ## Setup Instructions
